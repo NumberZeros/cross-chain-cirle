@@ -11,7 +11,6 @@ import './index.css';
 // Suppress noisy JSON-RPC subscription errors after transactions complete
 // These errors occur when CCTP provider's internal subscriptions cleanup
 const originalConsoleError = console.error;
-// eslint-disable-next-line no-console
 console.error = (...args: unknown[]) => {
   const message = String(args[0]);
 

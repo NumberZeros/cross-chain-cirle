@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { AdditiveBlending, Color, MathUtils, type Mesh, type Points } from 'three';
 
 function readCssHsl(varName: string): string | null {
@@ -22,26 +22,18 @@ function useThemeColors(): {
   ring: Color;
   mutedForeground: Color;
 } | null {
-  const [colors, setColors] = useState<{
-    primary: Color;
-    ring: Color;
-    mutedForeground: Color;
-  } | null>(null);
-
-  useEffect(() => {
+  return useMemo(() => {
     const primaryHsl = readCssHsl('--primary');
     const ringHsl = readCssHsl('--ring');
     const mutedForegroundHsl = readCssHsl('--muted-foreground');
-    if (!primaryHsl || !ringHsl || !mutedForegroundHsl) return;
+    if (!primaryHsl || !ringHsl || !mutedForegroundHsl) return null;
 
-    setColors({
+    return {
       primary: new Color(primaryHsl),
       ring: new Color(ringHsl),
       mutedForeground: new Color(mutedForegroundHsl),
-    });
+    };
   }, []);
-
-  return colors;
 }
 
 function WireKnot({

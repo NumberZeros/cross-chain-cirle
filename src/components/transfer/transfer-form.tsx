@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useEffect, useMemo, useState } from 'react';
-import { type Resolver, useForm } from 'react-hook-form';
+import { type Resolver, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useConnectorClient } from 'wagmi';
 import { z } from 'zod';
@@ -97,15 +97,14 @@ export function TransferForm(): React.ReactElement {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
     reset,
   } = form;
 
-  const fromAddress = watch('fromAddress');
-  const fromChainId = watch('fromChainId');
-  const toAddress = watch('toAddress');
-  const toChainId = watch('toChainId');
+  const fromAddress = useWatch({ control: form.control, name: 'fromAddress' }) ?? '';
+  const fromChainId = useWatch({ control: form.control, name: 'fromChainId' }) ?? '';
+  const toAddress = useWatch({ control: form.control, name: 'toAddress' }) ?? '';
+  const toChainId = useWatch({ control: form.control, name: 'toChainId' }) ?? '';
 
   // Determine chain types from addresses
   const sourceChainType =
