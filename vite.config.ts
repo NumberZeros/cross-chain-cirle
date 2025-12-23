@@ -1,6 +1,35 @@
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
+
+/**
+ * Plugin to inject Buffer polyfill initialization at the top of the entry chunk.
+ * This ensures Buffer is available globally before any vendor chunks (especially vendor-circle) are evaluated.
+ */
+function injectBufferPolyfill(): Plugin {
+  return {
+    name: 'inject-buffer-polyfill',
+    enforce: 'post',
+    generateBundle(_, bundle) {
+      // Find the entry chunk (index-*.js)
+      const entryChunk = Object.values(bundle).find(
+        (chunk) => chunk.type === 'chunk' && chunk.isEntry,
+      );
+
+      if (entryChunk && entryChunk.type === 'chunk') {
+        // Prepend Buffer initialization code at the very beginning of the entry chunk
+        const bufferInit = `
+// Buffer polyfill initialization - must run before any other code
+import { Buffer } from 'buffer';
+globalThis.Buffer = globalThis.Buffer || Buffer;
+globalThis.global = globalThis.global || globalThis;
+globalThis.process = globalThis.process || { env: {} };
+`;
+        entryChunk.code = bufferInit + entryChunk.code;
+      }
+    },
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -10,6 +39,7 @@ export default defineConfig({
         plugins: [['babel-plugin-react-compiler']],
       },
     }),
+    injectBufferPolyfill(),
   ],
   define: {
     global: 'globalThis',
@@ -33,23 +63,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {
-        banner(chunk) {
-          // Ensure the Circle vendor chunk can always access Buffer at module-eval time.
-          if (chunk.name === 'vendor-circle') {
-            return "import { Buffer as __Buffer } from 'buffer';";
-          }
-          return '';
-        },
-        intro(chunk) {
-          if (chunk.name === 'vendor-circle') {
-            return [
-              'globalThis.Buffer ??= __Buffer;',
-              'globalThis.global ??= globalThis;',
-              'globalThis.process ??= { env: {} };',
-            ].join('\n');
-          }
-          return '';
-        },
         manualChunks(id) {
           if (id.includes('node_modules')) {
             // Keep Buffer polyfill separate so it can initialize globals before heavy vendors evaluate.
