@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "buffer": "^6.0.3",
     "@circle-fin/adapter-solana": "^1.2.0",
     "@circle-fin/adapter-viem-v2": "^1.2.0",
     "@circle-fin/bridge-kit": "^1.2.0",
@@ -25,6 +24,7 @@
     "@solana/web3.js": "^1.95.8",
     "@tanstack/react-query": "^5.90.12",
     "bs58": "^6.0.0",
+    "buffer": "^6.0.3",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
     "motion": "^12.23.26",
