@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 
 /**
- * Plugin to inject Buffer polyfill initialization at the top of the entry chunk.
- * This ensures Buffer is available globally before any vendor chunks (especially vendor-circle) are evaluated.
+ * Plugin to ensure Buffer globals are initialized immediately after imports.
+ * This prevents "Buffer is not defined" errors in vendor-circle and other chunks.
  */
 function injectBufferPolyfill(): Plugin {
   return {
@@ -17,15 +17,27 @@ function injectBufferPolyfill(): Plugin {
       );
 
       if (entryChunk && entryChunk.type === 'chunk') {
-        // Prepend Buffer initialization code at the very beginning of the entry chunk
-        const bufferInit = `
-// Buffer polyfill initialization - must run before any other code
-import { Buffer } from 'buffer';
-globalThis.Buffer = globalThis.Buffer || Buffer;
-globalThis.global = globalThis.global || globalThis;
-globalThis.process = globalThis.process || { env: {} };
-`;
-        entryChunk.code = bufferInit + entryChunk.code;
+        // Find the vendor-buffer import pattern
+        // The import uses 't as X' pattern, we need to use X to call the Buffer export
+        const vendorBufferImportMatch = entryChunk.code.match(
+          /import\{[^}]*\bt as ([a-z]+)[^}]*\}from"\.\/vendor-buffer-[^"]+\.js";?/
+        );
+        
+        if (vendorBufferImportMatch) {
+          const [vendorBufferImport, importName] = vendorBufferImportMatch;
+          
+          // Create Buffer initialization code using the import name
+          const bufferInit = `var __buf=${importName}();globalThis.Buffer??=__buf.Buffer,globalThis.global??=globalThis,globalThis.process??={env:{}};`;
+          
+          // Replace the import with: import + Buffer init
+          const replacement = `${vendorBufferImport}${bufferInit}`;
+          
+          entryChunk.code = entryChunk.code.replace(vendorBufferImport, replacement);
+          
+          console.log('[inject-buffer-polyfill] Successfully injected Buffer initialization');
+        } else {
+          console.warn('[inject-buffer-polyfill] Could not find vendor-buffer import');
+        }
       }
     },
   };
