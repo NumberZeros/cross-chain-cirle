@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
@@ -19,7 +20,9 @@ export default defineConfig({
   resolve: {
     alias: {
       buffer: 'buffer/',
-      '@protobufjs/inquire': '/src/shims/protobufjs-inquire.ts',
+      '@protobufjs/inquire': fileURLToPath(
+        new URL('./src/shims/protobufjs-inquire.ts', import.meta.url),
+      ),
     },
   },
   build: {
